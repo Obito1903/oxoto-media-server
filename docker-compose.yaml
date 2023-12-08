@@ -1,0 +1,245 @@
+version: "3"
+services:
+  # Networking
+  traefik:
+    image: traefik:v2.5
+    container_name: traefik
+    restart: unless-stopped
+    networks:
+      - traefik
+      - wan
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    cpus: 2
+    mem_limit: 1000m
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - ./traefik/traefik.yaml:/etc/traefik/traefik.yml
+      - ./traefik/file-provider.yaml:/etc/traefik/file-provider.yml
+      - ./traefik/acme.json:/acme.json
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/log/traefik:/var/log/traefik
+    environment:
+      - TZ
+      # - OVH_ENDPOINT=${OVH_ENDPOINT}
+      # - OVH_APPLICATION_KEY=${OVH_APPLICATION_KEY}
+      # - OVH_APPLICATION_SECRET=${OVH_APPLICATION_SECRET}
+      # - OVH_CONSUMER_KEY=${OVH_CONSUMER_KEY}
+      # - OVH_PROPAGATION_TIMEOUT=60
+  errorpages:
+    image: tarampampam/error-pages
+    container_name: errorpages
+    restart: unless-stopped
+    networks:
+      - traefik
+    environment:
+      TEMPLATE_NAME: shuffle # list of themes https://github.com/tarampampam/error-pages?tab=readme-ov-file#-templates
+    labels:
+      traefik.enable: true
+      # use as "fallback" for any NON-registered services (with priority below normal)
+      traefik.http.routers.error-pages-router.rule: HostRegexp(`{host:.+}`)
+      traefik.http.routers.error-pages-router.priority: 10
+      # should say that all of your services work on https
+      traefik.http.routers.error-pages-router.entrypoints: web
+      traefik.http.routers.error-pages-router.middlewares: error-pages-middleware
+      # "errors" middleware settings
+      traefik.http.middlewares.error-pages-middleware.errors.status: 400-599
+      traefik.http.middlewares.error-pages-middleware.errors.service: error-pages-service
+      traefik.http.middlewares.error-pages-middleware.errors.query: /{status}.html
+      # define service properties
+      traefik.http.services.error-pages-service.loadbalancer.server.port: 8080
+    depends_on:
+      - traefik
+
+  # TV Shows/Animes
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+    networks:
+      - traefik
+      - wan
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    environment:
+      - PUID
+      - PGID
+      - TZ
+    volumes:
+      - sonarr:/config
+      - ${TVSHOWS_FOLDER}:/mnt/tvshows
+      - ${ANIMES_FOLDER}:/mnt/animes
+      - ${DOWNLOADS_FOLDER}:/mnt/downloads
+    labels:
+      - traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAIN_NAME}`)
+  # Movies
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    restart: unless-stopped
+    networks:
+      - traefik
+      - wan
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    environment:
+      - PUID
+      - PGID
+      - TZ
+    volumes:
+      - radarr:/config
+      - ${MOVIES_FOLDER}:/mnt/movies
+      - ${DOWNLOADS_FOLDER}:/mnt/downloads
+    labels:
+      - traefik.http.routers.radarr.rule=Host(`radarr.${DOMAIN_NAME}`)
+  # Indexer  # cyberghost:
+  #   image: tmcphee/cyberghostvpn
+  #   container_name: cyberghost
+  #   restart: unless-stopped
+  #   networks:
+  #     - wan
+  #     - vpn
+  #   cap_add:
+  #     - NET_ADMIN
+  #   privileged: true
+  #   environment:
+  #     - TZ
+  #     - ACC=${CYBERGHOST_ACCOUNT}
+  #     - PASS=${CYBERGHOST_PASSWORD}
+  #     - COUNTRY=${CYBERGHOST_COUNTRY}
+  #     - NETWORK=192.168.1.0/24
+  #     - WHITELISTPORTS=8080
+  #   volumes:
+  #     - cyberghost:/home/root/.cyberghost:rw
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    restart: unless-stopped
+    networks:
+      - traefik
+      - wan
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    environment:
+      - PUID
+      - PGID
+      - TZ
+    volumes:
+      - prowlarr:/config
+      - ${DOWNLOADS_FOLDER}:/mnt/downloads
+    labels:
+      - traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOMAIN_NAME}`)
+  # Plex
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    restart: unless-stopped
+    networks:
+      - traefik
+      - wan
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    ports:
+      - 32400:32400
+      - 1900:1900/udp
+      # - 5353:5353/udp
+      - 8324:8324
+      - 32410:32410/udp
+      - 32412:32412/udp
+      - 32413:32413/udp
+      - 32414:32414/udp
+      - 32469:32469
+    environment:
+      - PUID
+      - PGID
+      - TZ
+      - DOCKER_MODS=linuxserver/mods:plex-absolute-hama
+    volumes:
+      - plex:/config
+      - ${TVSHOWS_FOLDER}:/mnt/tvshows
+      - ${ANIMES_FOLDER}:/mnt/animes
+      - ${MOVIES_FOLDER}:/mnt/movies
+    devices:
+      - /dev/dri:/dev/dri
+    labels:
+      - traefik.http.routers.plex.rule=Host(`plex.${DOMAIN_NAME}`)
+      - traefik.http.services.plex.loadbalancer.server.port=32400
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    restart: unless-stopped
+    networks:
+      - traefik
+      - wan
+    labels:
+      - traefik.http.routers.flaresolverr.rule=Host(`flaresolverr.${DOMAIN_NAME}`)
+
+  # Torrents
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    restart: unless-stopped
+    networks:
+      - traefik
+      - vpn
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    ports:
+      - 8080:8080
+    environment:
+      - PUID
+      - PGID
+      - TZ
+      - WEBUI_PORT=8080
+    volumes:
+      - qbittorrent:/config
+      - ${DOWNLOADS_FOLDER}:/mnt/downloads
+    labels:
+      - traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${DOMAIN_NAME}`)
+      - traefik.http.services.qbittorrent.loadbalancer.server.port=8080
+  # cyberghost:
+  #   image: tmcphee/cyberghostvpn
+  #   container_name: cyberghost
+  #   restart: unless-stopped
+  #   networks:
+  #     - wan
+  #     - vpn
+  #   cap_add:
+  #     - NET_ADMIN
+  #   privileged: true
+  #   environment:
+  #     - TZ
+  #     - ACC=${CYBERGHOST_ACCOUNT}
+  #     - PASS=${CYBERGHOST_PASSWORD}
+  #     - COUNTRY=${CYBERGHOST_COUNTRY}
+  #     - NETWORK=192.168.1.0/24
+  #     - WHITELISTPORTS=8080
+  #   volumes:
+  #     - cyberghost:/home/root/.cyberghost:rw
+
+volumes:
+  sonarr:
+  radarr:
+  prowlarr:
+  plex:
+  qbittorrent:
+  cyberghost:
+
+networks:
+  vpn:
+    driver: bridge
+    internal: true
+  wan:
+    driver: bridge
+  traefik:
+    driver: bridge
+    internal: true

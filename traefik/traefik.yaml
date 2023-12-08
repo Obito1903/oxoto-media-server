@@ -1,0 +1,71 @@
+api:
+  insecure: true
+  dashboard: true
+
+serversTransport:
+  insecureSkipVerify: true
+
+entryPoints:
+  web:
+    address: :80
+    # http:
+    #   redirections:
+    #     entryPoint:
+    #       priority: 1
+    #       to: websecure
+    #       scheme: https
+  websecure:
+    address: :443
+providers:
+  file:
+    filename: /etc/traefik/file-provider.yml
+    watch: true
+  docker:
+    network: traefik
+
+# certificatesResolvers:
+#   obitofr:
+#     acme:
+#       email: "fabiendarrigran@hotmail.fr"
+#       storage: "acme.json"
+#       caServer: "https://acme-v02.api.letsencrypt.org/directory"
+#       tlsChallenge: {}
+#       dnsChallenge:
+#         provider: ovh
+#         delayBeforeCheck: 10
+
+metrics:
+  datadog:
+    address: 127.0.0.1:8125
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+    addServicesLabels: true
+
+accessLog:
+  filePath: "/var/log/traefik/access.log"
+  format: json
+  filters:
+    statusCodes:
+      - "200-299"
+      - "300-399"
+    retryAttempts: true
+    minDuration: "10ms"
+  fields:
+    defaultMode: drop
+    names:
+      ClientHost: keep
+      ClientPort: keep
+      RequestHost: keep
+      RequestMethod: keep
+      RequestPath: keep
+      RouterName: keep
+      ServiceAddr: keep
+      StartUTC: keep
+      DownstreamStatus: keep
+    headers:
+      defaultMode: drop
+      names:
+        User-Agent: keep
+        Authorization: drop
+        Content-Type: keep
+        X-Forwarded-For: keep
