@@ -25,11 +25,11 @@ services:
       - /var/log/traefik:/var/log/traefik
     environment:
       - TZ
-      # - OVH_ENDPOINT=${OVH_ENDPOINT}
-      # - OVH_APPLICATION_KEY=${OVH_APPLICATION_KEY}
-      # - OVH_APPLICATION_SECRET=${OVH_APPLICATION_SECRET}
-      # - OVH_CONSUMER_KEY=${OVH_CONSUMER_KEY}
-      # - OVH_PROPAGATION_TIMEOUT=60
+      - OVH_ENDPOINT=${OVH_ENDPOINT}
+      - OVH_APPLICATION_KEY=${OVH_APPLICATION_KEY}
+      - OVH_APPLICATION_SECRET=${OVH_APPLICATION_SECRET}
+      - OVH_CONSUMER_KEY=${OVH_CONSUMER_KEY}
+      - OVH_PROPAGATION_TIMEOUT=60
   errorpages:
     image: tarampampam/error-pages
     container_name: errorpages
@@ -77,6 +77,9 @@ services:
       - ${DOWNLOADS_FOLDER}:/mnt/downloads
     labels:
       - traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAIN_NAME}`)
+      - traefik.http.routers.sonarr.entrypoints=web,websecure
+      - traefik.http.routers.sonarr.tls.certresolver=ovh
+      - traefik.http.routers.sonarr.tls=true
   # Movies
   radarr:
     image: lscr.io/linuxserver/radarr:latest
@@ -98,25 +101,10 @@ services:
       - ${DOWNLOADS_FOLDER}:/mnt/downloads
     labels:
       - traefik.http.routers.radarr.rule=Host(`radarr.${DOMAIN_NAME}`)
-  # Indexer  # cyberghost:
-  #   image: tmcphee/cyberghostvpn
-  #   container_name: cyberghost
-  #   restart: unless-stopped
-  #   networks:
-  #     - wan
-  #     - vpn
-  #   cap_add:
-  #     - NET_ADMIN
-  #   privileged: true
-  #   environment:
-  #     - TZ
-  #     - ACC=${CYBERGHOST_ACCOUNT}
-  #     - PASS=${CYBERGHOST_PASSWORD}
-  #     - COUNTRY=${CYBERGHOST_COUNTRY}
-  #     - NETWORK=192.168.1.0/24
-  #     - WHITELISTPORTS=8080
-  #   volumes:
-  #     - cyberghost:/home/root/.cyberghost:rw
+      - traefik.http.routers.radarr.entrypoints=web,websecure
+      - traefik.http.routers.radarr.tls.certresolver=ovh
+      - traefik.http.routers.radarr.tls=true
+  # Indexer
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
@@ -136,6 +124,9 @@ services:
       - ${DOWNLOADS_FOLDER}:/mnt/downloads
     labels:
       - traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOMAIN_NAME}`)
+      - traefik.http.routers.prowlarr.entrypoints=web,websecure
+      - traefik.http.routers.prowlarr.tls.certresolver=ovh
+      - traefik.http.routers.prowlarr.tls=true
   # Plex
   plex:
     image: lscr.io/linuxserver/plex:latest
@@ -172,6 +163,9 @@ services:
     labels:
       - traefik.http.routers.plex.rule=Host(`plex.${DOMAIN_NAME}`)
       - traefik.http.services.plex.loadbalancer.server.port=32400
+      - traefik.http.routers.plex.entrypoints=web,websecure
+      - traefik.http.routers.plex.tls.certresolver=ovh
+      - traefik.http.routers.plex.tls=true
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
@@ -181,7 +175,10 @@ services:
       - wan
     labels:
       - traefik.http.routers.flaresolverr.rule=Host(`flaresolverr.${DOMAIN_NAME}`)
-
+      - traefik.http.services.flaresolverr.loadbalancer.server.port=8191
+      - traefik.http.routers.flaresolverr.entrypoints=web,websecure
+      - traefik.http.routers.flaresolverr.tls.certresolver=ovh
+      - traefik.http.routers.flaresolverr.tls=true
   # Torrents
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
@@ -206,25 +203,28 @@ services:
     labels:
       - traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${DOMAIN_NAME}`)
       - traefik.http.services.qbittorrent.loadbalancer.server.port=8080
-  # cyberghost:
-  #   image: tmcphee/cyberghostvpn
-  #   container_name: cyberghost
-  #   restart: unless-stopped
-  #   networks:
-  #     - wan
-  #     - vpn
-  #   cap_add:
-  #     - NET_ADMIN
-  #   privileged: true
-  #   environment:
-  #     - TZ
-  #     - ACC=${CYBERGHOST_ACCOUNT}
-  #     - PASS=${CYBERGHOST_PASSWORD}
-  #     - COUNTRY=${CYBERGHOST_COUNTRY}
-  #     - NETWORK=192.168.1.0/24
-  #     - WHITELISTPORTS=8080
-  #   volumes:
-  #     - cyberghost:/home/root/.cyberghost:rw
+      - traefik.http.routers.qbittorrent.entrypoints=web,websecure
+      - traefik.http.routers.qbittorrent.tls.certresolver=ovh
+      - traefik.http.routers.qbittorrent.tls=true
+  cyberghost:
+    image: tmcphee/cyberghostvpn
+    container_name: cyberghost
+    restart: unless-stopped
+    networks:
+      - wan
+      - vpn
+    cap_add:
+      - NET_ADMIN
+    privileged: true
+    environment:
+      - TZ
+      - ACC=${CYBERGHOST_ACCOUNT}
+      - PASS=${CYBERGHOST_PASSWORD}
+      - COUNTRY=${CYBERGHOST_COUNTRY}
+      - NETWORK=192.168.1.0/24
+      - WHITELISTPORTS=8080
+    volumes:
+      - cyberghost:/home/root/.cyberghost:rw
 
 volumes:
   sonarr:

@@ -23,23 +23,16 @@ providers:
   docker:
     network: traefik
 
-# certificatesResolvers:
-#   obitofr:
-#     acme:
-#       email: "fabiendarrigran@hotmail.fr"
-#       storage: "acme.json"
-#       caServer: "https://acme-v02.api.letsencrypt.org/directory"
-#       tlsChallenge: {}
-#       dnsChallenge:
-#         provider: ovh
-#         delayBeforeCheck: 10
-
-metrics:
-  datadog:
-    address: 127.0.0.1:8125
-    addEntryPointsLabels: true
-    addRoutersLabels: true
-    addServicesLabels: true
+certificatesResolvers:
+  ovh:
+    acme:
+      email: "fabiendarrigran@hotmail.fr"
+      storage: "acme.json"
+      caServer: "https://acme-v02.api.letsencrypt.org/directory"
+      tlsChallenge: {}
+      dnsChallenge:
+        provider: ovh
+        delayBeforeCheck: "10"
 
 accessLog:
   filePath: "/var/log/traefik/access.log"
