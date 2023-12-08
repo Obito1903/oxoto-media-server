@@ -4,11 +4,11 @@
 
 This is a docker-compose file to run a media server with the following services:
 
-- Plex Media Server | http://plex.${DOMAIN_NAME}/web/
-- Sonarr (TV Shows & Anime downloader) | http://sonarr.${DOMAIN_NAME}/
-- Radarr (Movies downloader) | http://radarr.${DOMAIN_NAME}/
-- Prowlarr (Indexer for Sonarr & Radarr) | http://prowlarr.${DOMAIN_NAME}/
-- qBittorrent (Torrent client) | http://qbittorrent.${DOMAIN_NAME}/
+- Plex Media Server | `http://plex.${DOMAIN_NAME}/web/`
+- Sonarr (TV Shows & Anime downloader) | `http://sonarr.${DOMAIN_NAME}/`
+- Radarr (Movies downloader) | `http://radarr.${DOMAIN_NAME}/`
+- Prowlarr (Indexer for Sonarr & Radarr) | `http://prowlarr.${DOMAIN_NAME}/`
+- qBittorrent (Torrent client) | `http://qbittorrent.${DOMAIN_NAME}/`
   - cyberghost (VPN)
 - Traefik (Reverse proxy & SSL)
   - Error pages
@@ -18,7 +18,7 @@ This is a docker-compose file to run a media server with the following services:
 ### 1. Clone the repository
 
 ```bash
-git clone
+git clone https://github.com/Obito1903/oxoto-media-server.git
 ```
 
 ### 2. Create the .env file
